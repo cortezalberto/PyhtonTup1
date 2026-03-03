@@ -18,7 +18,7 @@ Ejemplo de uso:
     >>> generico = ProductoFactory.crear_producto("libro", "Test", 10.0)
 """
 
-from patrones.producto import Libro, Electronico
+from patrones.factory.producto import Libro, Electronico
 
 
 class ProductoFactory:

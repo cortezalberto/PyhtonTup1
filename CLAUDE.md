@@ -16,10 +16,10 @@ Quick sanity checks for individual patterns:
 
 ```bash
 # Singleton
-python -c "from patrones.database_connection import DatabaseConnection; db1 = DatabaseConnection.get_instance(); db2 = DatabaseConnection.get_instance(); print('OK' if db1 is db2 else 'FAIL')"
+python -c "from patrones.singleton import DatabaseConnection; db1 = DatabaseConnection.get_instance(); db2 = DatabaseConnection.get_instance(); print('OK' if db1 is db2 else 'FAIL')"
 
 # Factory
-python -c "from patrones.producto_factory import ProductoFactory; p = ProductoFactory.crear_libro('Test', 10.0, 'Autor'); print('OK' if p.get_nombre() == 'Test' else 'FAIL')"
+python -c "from patrones.factory import ProductoFactory; p = ProductoFactory.crear_libro('Test', 10.0, 'Autor'); print('OK' if p.get_nombre() == 'Test' else 'FAIL')"
 ```
 
 No build step, no linter configured, no test framework. Target Python 3.6+.
@@ -28,14 +28,16 @@ No build step, no linter configured, no test framework. Target Python 3.6+.
 
 `main.py` is the entry point — it imports from the `patrones` package and demos each pattern in sequence.
 
-The `patrones/` package has one module per pattern, each with an abstract interface (ABC) and concrete implementations:
+The `patrones/` package is organized into subpackages (one per pattern), each with an `__init__.py` that re-exports public classes and an abstract interface (ABC) with concrete implementations:
 
-| Pattern | Files | Key Classes |
-|---------|-------|-------------|
-| Singleton | `database_connection.py` | `DatabaseConnection` (`__new__` controls instance; `get_instance()` delegates to it) |
-| Factory | `producto.py`, `producto_factory.py` | Abstract `Producto` → `Libro`, `Electronico`; `ProductoFactory` (static methods) |
-| Observer | `observer.py`, `tienda.py` | Abstract `Observer` → `Cliente`; `Tienda` (validates Observer type, prevents duplicate subscriptions) |
-| Strategy | `estrategia_pago.py`, `carrito_compra.py` | Abstract `EstrategiaPago` → `PagoTarjeta`, `PagoEfectivo`, `PagoPayPal`; `CarritoCompra` (resets after checkout) |
+| Pattern | Subpackage | Files | Key Classes |
+|---------|------------|-------|-------------|
+| Singleton | `singleton/` | `database_connection.py` | `DatabaseConnection` (`__new__` controls instance; `get_instance()` delegates to it) |
+| Factory | `factory/` | `producto.py`, `producto_factory.py` | Abstract `Producto` → `Libro`, `Electronico`; `ProductoFactory` (static methods) |
+| Observer | `observer/` | `observer.py`, `tienda.py` | Abstract `Observer` → `Cliente`; `Tienda` (validates Observer type, prevents duplicate subscriptions) |
+| Strategy | `strategy/` | `estrategia_pago.py`, `carrito_compra.py` | Abstract `EstrategiaPago` → `PagoTarjeta`, `PagoEfectivo`, `PagoPayPal`; `CarritoCompra` (resets after checkout) |
+
+Imports use subpackage re-exports (e.g., `from patrones.singleton import DatabaseConnection`, `from patrones.factory import ProductoFactory`).
 
 Patterns are intentionally decoupled — maintain this separation and avoid coupling patterns across modules unless part of an explicit refactor. There is no ORM or real database; `DatabaseConnection` prints to stdout. Extensions should keep this lightweight approach or clearly document added dependencies.
 

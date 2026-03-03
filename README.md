@@ -10,18 +10,26 @@ Proyecto educativo que demuestra 4 patrones de diseño fundamentales aplicados a
 ## Estructura del Proyecto
 
 ```
-├── main.py                          # Demostración completa de todos los patrones
-├── patrones/                        # Paquete principal
-│   ├── __init__.py
-│   ├── database_connection.py      # Patrón Singleton
-│   ├── producto.py                  # Patrón Factory - Clase base y productos
-│   ├── producto_factory.py          # Patrón Factory - Fábrica
-│   ├── observer.py                  # Patrón Observer - Interfaz y Cliente
-│   ├── tienda.py                    # Patrón Observer - Sujeto observable
-│   ├── estrategia_pago.py           # Patrón Strategy - Estrategias de pago
-│   └── carrito_compra.py            # Patrón Strategy - Contexto
-├── README.md                        # Este archivo
-└── requirements.txt                 # Dependencias (ninguna)
+├── main.py                              # Demostración completa de todos los patrones
+├── patrones/                            # Paquete principal
+│   ├── __init__.py                      # Documentación del paquete
+│   ├── singleton/                       # Patrón Singleton
+│   │   ├── __init__.py                  # Re-exporta DatabaseConnection
+│   │   └── database_connection.py       # Conexión única a BD
+│   ├── factory/                         # Patrón Factory
+│   │   ├── __init__.py                  # Re-exporta Producto, Libro, Electronico, ProductoFactory
+│   │   ├── producto.py                  # Clase abstracta base y productos concretos
+│   │   └── producto_factory.py          # Fábrica centralizada de productos
+│   ├── observer/                        # Patrón Observer
+│   │   ├── __init__.py                  # Re-exporta Observer, Cliente, Tienda
+│   │   ├── observer.py                  # Interfaz Observer y Cliente concreto
+│   │   └── tienda.py                    # Sujeto observable (Tienda)
+│   └── strategy/                        # Patrón Strategy
+│       ├── __init__.py                  # Re-exporta estrategias y CarritoCompra
+│       ├── estrategia_pago.py           # Interfaz y estrategias de pago concretas
+│       └── carrito_compra.py            # Contexto (Carrito de Compras)
+├── README.md                            # Este archivo
+└── requirements.txt                     # Dependencias (ninguna)
 ```
 
 ## Requisitos
@@ -52,7 +60,7 @@ chmod +x main.py
 
 ### 1. Singleton - DatabaseConnection
 
-**Archivo**: `patrones/database_connection.py`
+**Archivo**: `patrones/singleton/database_connection.py`
 
 Garantiza una única instancia de conexión a la base de datos en toda la aplicación.
 
@@ -70,8 +78,8 @@ print(db1 is db2)  # True - misma instancia
 ### 2. Factory - ProductoFactory
 
 **Archivos**:
-- `patrones/producto.py` (Producto, Libro, Electronico)
-- `patrones/producto_factory.py` (ProductoFactory)
+- `patrones/factory/producto.py` (Producto, Libro, Electronico)
+- `patrones/factory/producto_factory.py` (ProductoFactory)
 
 Centraliza la creación de diferentes tipos de productos.
 
@@ -88,8 +96,8 @@ laptop = ProductoFactory.crear_electronico("Laptop HP", 899.99, 24)
 ### 3. Observer - Tienda y Cliente
 
 **Archivos**:
-- `patrones/observer.py` (Observer, Cliente)
-- `patrones/tienda.py` (Tienda)
+- `patrones/observer/observer.py` (Observer, Cliente)
+- `patrones/observer/tienda.py` (Tienda)
 
 Sistema de notificaciones donde la tienda notifica a clientes suscritos sobre ofertas.
 
@@ -108,8 +116,8 @@ tienda.nueva_oferta("50% descuento en laptops")
 ### 4. Strategy - CarritoCompra y Estrategias de Pago
 
 **Archivos**:
-- `patrones/estrategia_pago.py` (EstrategiaPago, PagoTarjeta, PagoEfectivo, PagoPayPal)
-- `patrones/carrito_compra.py` (CarritoCompra)
+- `patrones/strategy/estrategia_pago.py` (EstrategiaPago, PagoTarjeta, PagoEfectivo, PagoPayPal)
+- `patrones/strategy/carrito_compra.py` (CarritoCompra)
 
 Permite cambiar dinámicamente el método de pago del carrito.
 
@@ -143,7 +151,7 @@ DEMOSTRACIÓN DE PATRONES DE DISEÑO EN PYTHON
 ==================================================
 
 >>> 1. PATRÓN SINGLETON <<<
-Conexión a BD creada: jdbc:mysql://localhost:3306/midb
+Conexión a BD creada: mysql://localhost:3306/midb
 ¿Son la misma instancia? True
 Ejecutando query: SELECT * FROM usuarios
 
@@ -192,10 +200,10 @@ Para verificar que cada patrón funciona correctamente:
 
 ```bash
 # Prueba individual del Singleton
-python -c "from patrones.database_connection import DatabaseConnection; db1 = DatabaseConnection.get_instance(); db2 = DatabaseConnection.get_instance(); print('Singleton OK' if db1 is db2 else 'ERROR')"
+python -c "from patrones.singleton import DatabaseConnection; db1 = DatabaseConnection.get_instance(); db2 = DatabaseConnection.get_instance(); print('Singleton OK' if db1 is db2 else 'ERROR')"
 
 # Prueba individual del Factory
-python -c "from patrones.producto_factory import ProductoFactory; p = ProductoFactory.crear_libro('Test', 10.0, 'Autor'); print('Factory OK' if p.get_nombre() == 'Test' else 'ERROR')"
+python -c "from patrones.factory import ProductoFactory; p = ProductoFactory.crear_libro('Test', 10.0, 'Autor'); print('Factory OK' if p.get_nombre() == 'Test' else 'ERROR')"
 ```
 
 ## Autor

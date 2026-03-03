@@ -24,7 +24,7 @@ Ejemplo de uso:
     >>> tienda.nueva_oferta("20% en todo")
 """
 
-from patrones.observer import Observer
+from patrones.observer.observer import Observer
 
 
 class Tienda:

@@ -18,13 +18,11 @@ Cada sección está claramente separada para que el estudiante pueda
 identificar qué patrón se está demostrando y cómo se usa.
 """
 
-# Importaciones organizadas por patrón
-from patrones.database_connection import DatabaseConnection  # Singleton
-from patrones.producto_factory import ProductoFactory         # Factory
-from patrones.observer import Cliente                         # Observer
-from patrones.tienda import Tienda                            # Observer
-from patrones.carrito_compra import CarritoCompra             # Strategy
-from patrones.estrategia_pago import PagoTarjeta, PagoEfectivo, PagoPayPal  # Strategy
+# Importaciones organizadas por patrón (cada patrón tiene su propio subpaquete)
+from patrones.singleton import DatabaseConnection
+from patrones.factory import ProductoFactory
+from patrones.observer import Cliente, Tienda
+from patrones.strategy import CarritoCompra, PagoTarjeta, PagoEfectivo, PagoPayPal
 
 
 def main():

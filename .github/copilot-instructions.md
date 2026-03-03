@@ -14,17 +14,19 @@ be aware that the code is intentionally lightweight and relies solely on the Pyt
   - The repository doesn’t enforce a linter; however, keep lines under ~80–100 chars and
     use f-strings as seen in examples like `main.py` and `README.md`.
 - Use the `abc` module for abstract base classes with `@abstractmethod` and `@staticmethod`
-as already shown in `producto.py`, `observer.py`, and `estrategia_pago.py`.
+as already shown in `factory/producto.py`, `observer/observer.py`, and `strategy/estrategia_pago.py`.
 
 ## Architecture
 
 - `main.py` drives the demonstration; it instantiates objects from the `patrones` package
   and exercises each pattern in sequence.
-- The `patrones` package contains one file per pattern:
-  - `database_connection.py` – Singleton implementation controlling a fake DB connection.
-  - `producto.py` + `producto_factory.py` – Factory pattern for creating `Libro`/`Electronico`.
-  - `observer.py` + `tienda.py` – Observer pattern for notifying subscribed customers.
-  - `estrategia_pago.py` + `carrito_compra.py` – Strategy pattern for different payment methods.
+- The `patrones` package is organized into subpackages (one per pattern), each with an
+  `__init__.py` that re-exports public classes:
+  - `singleton/database_connection.py` – Singleton implementation controlling a fake DB connection.
+  - `factory/producto.py` + `factory/producto_factory.py` – Factory pattern for creating `Libro`/`Electronico`.
+  - `observer/observer.py` + `observer/tienda.py` – Observer pattern for notifying subscribed customers.
+  - `strategy/estrategia_pago.py` + `strategy/carrito_compra.py` – Strategy pattern for different payment methods.
+- Imports use subpackage re-exports (e.g., `from patrones.singleton import DatabaseConnection`).
 
 Agents should maintain this separation and avoid coupling patterns across modules unless the
 change is part of an explicit refactor or improvement.

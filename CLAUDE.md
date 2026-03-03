@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Educational Python project (Equipo: Desarrollo Los Cortez) demonstrating four design patterns (Singleton, Factory, Observer, Strategy) through an e-commerce scenario. Uses only the Python standard library — no external dependencies. Keep changes focused on the educational purpose of the repository.
+Educational Python project (Equipo: Desarrollo Los Cortez) demonstrating four GoF design patterns through a simulated e-commerce scenario. The system models four concrete problems: a shared DB connection (Singleton), a mixed product catalogue of books and electronics (Factory), a customer notification system for promotions (Observer), and a flexible checkout with interchangeable payment methods (Strategy). Uses only the Python standard library — no external dependencies. Keep changes focused on the educational purpose of the repository.
+
+All four patterns follow the same internal structure: an abstract base class (ABC) defines the interface, and one or more concrete classes implement it. Each pattern lives in its own subpackage under `patrones/`.
 
 ## Running the Project
 
@@ -15,49 +17,90 @@ python main.py
 Quick sanity checks for individual patterns:
 
 ```bash
-# Singleton
+# Singleton — verifica que dos llamadas devuelven el mismo objeto
 python -c "from patrones.singleton import DatabaseConnection; db1 = DatabaseConnection.get_instance(); db2 = DatabaseConnection.get_instance(); print('OK' if db1 is db2 else 'FAIL')"
 
-# Factory
+# Factory — verifica creación de producto por método tipado
 python -c "from patrones.factory import ProductoFactory; p = ProductoFactory.crear_libro('Test', 10.0, 'Autor'); print('OK' if p.get_nombre() == 'Test' else 'FAIL')"
+
+# Factory — verifica creación genérica por string y error para tipo inválido
+python -c "from patrones.factory import ProductoFactory; p = ProductoFactory.crear_producto('libro', 'Test', 10.0); print('OK' if p.get_nombre() == 'Test' else 'FAIL')"
+
+# Observer — verifica suscripción, notificación y rechazo de duplicados
+python -c "
+from patrones.observer import Cliente, Tienda
+t = Tienda('Test'); c = Cliente('Ana')
+t.suscribir(c); t.suscribir(c)  # segundo suscribir debe rechazarse
+print('OK' if len(t._clientes) == 1 else 'FAIL')
+"
+
+# Strategy — verifica checkout y reset del carrito
+python -c "
+from patrones.factory import ProductoFactory
+from patrones.strategy import CarritoCompra, PagoEfectivo
+c = CarritoCompra(); c.set_estrategia_pago(PagoEfectivo())
+c.agregar_producto(ProductoFactory.crear_libro('Test', 10.0, 'Autor'))
+c.checkout()
+print('OK' if c._productos == [] else 'FAIL')
+"
 ```
 
 No build step, no linter configured, no test framework. Target Python 3.6+.
 
 ## Architecture
 
-`main.py` is the entry point — it imports from the `patrones` package and demos each pattern in sequence.
+`main.py` is the entry point — imports from `patrones` and demos each pattern in sequence inside `main()`. Products created in the Factory section (`libro1`, `laptop`, etc.) are deliberately reused in the Strategy section to show realistic inter-pattern integration.
 
-The `patrones/` package is organized into subpackages (one per pattern), each with an `__init__.py` that re-exports public classes and an abstract interface (ABC) with concrete implementations:
+The `patrones/` package is organized into subpackages (one per pattern), each with an `__init__.py` that re-exports public classes:
 
-| Pattern | Subpackage | Files | Key Classes |
-|---------|------------|-------|-------------|
-| Singleton | `singleton/` | `database_connection.py` | `DatabaseConnection` (`__new__` controls instance; `get_instance()` delegates to it) |
-| Factory | `factory/` | `producto.py`, `producto_factory.py` | Abstract `Producto` → `Libro`, `Electronico`; `ProductoFactory` (static methods) |
-| Observer | `observer/` | `observer.py`, `tienda.py` | Abstract `Observer` → `Cliente`; `Tienda` (validates Observer type, prevents duplicate subscriptions) |
-| Strategy | `strategy/` | `estrategia_pago.py`, `carrito_compra.py` | Abstract `EstrategiaPago` → `PagoTarjeta`, `PagoEfectivo`, `PagoPayPal`; `CarritoCompra` (resets after checkout) |
+```
+patrones/
+├── __init__.py                  # docstring listing all subpackages
+├── singleton/
+│   ├── __init__.py              # re-exports DatabaseConnection
+│   └── database_connection.py
+├── factory/
+│   ├── __init__.py              # re-exports Producto, Libro, Electronico, ProductoFactory
+│   ├── producto.py
+│   └── producto_factory.py
+├── observer/
+│   ├── __init__.py              # re-exports Observer, Cliente, Tienda
+│   ├── observer.py
+│   └── tienda.py
+└── strategy/
+    ├── __init__.py              # re-exports EstrategiaPago, Pago*, CarritoCompra
+    ├── estrategia_pago.py
+    └── carrito_compra.py
+```
 
-Imports use subpackage re-exports (e.g., `from patrones.singleton import DatabaseConnection`, `from patrones.factory import ProductoFactory`).
+| Pattern | Subpackage | Key Classes |
+|---------|------------|-------------|
+| Singleton | `singleton/` | `DatabaseConnection` — `__new__` + `_initialized` flag prevent re-init |
+| Factory | `factory/` | Abstract `Producto` → `Libro`, `Electronico`; `ProductoFactory` (static methods, raises `ValueError` for unknown types) |
+| Observer | `observer/` | Abstract `Observer` → `Cliente`; `Tienda` validates `isinstance`, rejects duplicates, handles missing subscriber gracefully |
+| Strategy | `strategy/` | Abstract `EstrategiaPago` → `PagoTarjeta`, `PagoEfectivo`, `PagoPayPal`; `CarritoCompra` resets after checkout |
 
-Patterns are intentionally decoupled — maintain this separation and avoid coupling patterns across modules unless part of an explicit refactor. There is no ORM or real database; `DatabaseConnection` prints to stdout. Extensions should keep this lightweight approach or clearly document added dependencies.
+All imports use subpackage re-exports, e.g. `from patrones.singleton import DatabaseConnection`.
 
 ## Key Implementation Details
 
-- **Tienda.suscribir()** validates `isinstance(cliente, Observer)` and rejects duplicates.
-- **Tienda.desuscribir()** checks membership before removing to avoid `ValueError`.
-- **PagoEfectivo.pagar()** uses `round(monto * 0.95, 2)` for monetary precision.
-- **CarritoCompra.checkout()** clears `_productos` and `_estrategia_pago` after completing a purchase.
+- **Singleton**: `get_instance()` simply calls `DatabaseConnection()` — `__new__` handles the guard. The `_initialized` flag in `__init__` prevents re-execution since Python always calls `__init__` after `__new__`.
+- **Factory**: `ProductoFactory.crear_producto(tipo, ...)` accepts a case-insensitive string and raises `ValueError` for unknown types. `crear_libro` / `crear_electronico` are typed convenience methods.
+- **Observer — Tienda.suscribir()**: validates `isinstance(cliente, Observer)` raising `TypeError`, and short-circuits on duplicate without error.
+- **Observer — Tienda.desuscribir()**: checks `if cliente not in self._clientes` before `remove()` to avoid `ValueError`.
+- **Strategy — PagoEfectivo.pagar()**: uses `round(monto * 0.95, 2)` — explicitly guards against floating-point precision errors.
+- **Strategy — CarritoCompra.checkout()**: guards empty cart and `None` strategy before processing; clears `_productos` and `_estrategia_pago` after purchase.
 
 ## Code Conventions
 
-- Classes: `CamelCase`. Methods/variables: `snake_case`. Private attributes: `_prefixed`.
-- Abstract interfaces use `abc.ABC` with `@abstractmethod`. Factory methods use `@staticmethod`.
+- Classes: `CamelCase`. Methods/variables: `snake_case`. Protected attributes: `_single_underscore`.
+- Abstract interfaces use `abc.ABC` + `@abstractmethod`. Factory methods use `@staticmethod`.
 - All output is via `print()` to stdout — no real DB, network, or file I/O.
-- No type hints currently; acceptable to add if they improve clarity.
 - Keep lines under ~100 chars. Use f-strings for formatting.
-- All code and output is in Spanish (method names, print messages, documentation).
-- All modules, classes, and methods have educational docstrings (Google style with Args/Returns/Raises). Maintain this convention when adding new code.
+- All code, output, and documentation is in Spanish.
+- Every module, class, and method has a Google-style docstring (Args/Returns/Raises sections). Maintain this when adding new code.
+- No type hints currently; acceptable to add if they improve clarity.
 
 ## Extending the Project
 
-When adding new product types, observers, or payment strategies, follow the existing idiom: define an ABC interface, then implement concrete classes. For new payment methods, follow the constructor injection pattern seen in `carrito_compra.py` (`set_estrategia_pago`). Suggested improvements documented in README: type hints, `@property` decorators, `dataclasses`, context managers.
+When adding new product types, observers, or payment strategies follow the existing idiom: define a new concrete class that inherits from the relevant ABC (`Producto`, `Observer`, `EstrategiaPago`). For new payment methods, use constructor injection via `set_estrategia_pago`. Patterns are intentionally decoupled — avoid coupling modules from different subpackages. Suggested improvements noted in README: `@property` decorators, `dataclasses`, `decimal.Decimal` for monetary values, context managers.
